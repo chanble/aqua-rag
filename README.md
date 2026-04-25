@@ -56,8 +56,9 @@ let config = RagConfig::new(
     PathBuf::from("./models/tokenizer.json"),
 ).with_batch_size(32);
 
-let rag = AquaRag::new(config)?;
-rag.init()?;  // 创建表和索引（幂等）
+let mut rag = AquaRag::new(config);
+rag.open().await?;   // 加载模型、连接 LanceDB
+rag.init_table().await?;  // 创建表和索引（幂等）
 ```
 
 ### 3. 构建文档（由调用方负责数据提取）
@@ -72,13 +73,13 @@ let doc = Document {
         .with_table_name("users")
         .with_columns(vec!["id".into(), "name".into(), "email".into()]),
 };
-rag.add_documents(vec![doc])?;
+rag.add_documents(vec![doc]).await?;
 ```
 
 ### 4. 语义检索
 
 ```rust
-let results = rag.search("查询用户邮箱", 5)?;
+let results = rag.search("查询用户邮箱", 5).await?;
 for res in results {
     println!("score: {:.3}, text: {}", res.score, res.text);
 }
@@ -88,13 +89,13 @@ for res in results {
 
 ```rust
 // 根据ID删除
-rag.delete_documents(&["users".to_string()])?;
+rag.delete_documents(&["users".to_string()]).await?;
 
 // 清空所有
-rag.clear()?;
+rag.clear().await?;
 
 // 获取统计
-let stats = rag.stats()?;
+let stats = rag.stats().await?;
 println!("文档数: {}, 向量维度: {}", stats.total_documents, stats.embedding_dimension);
 ```
 
@@ -103,14 +104,9 @@ println!("文档数: {}, 向量维度: {}", stats.total_documents, stats.embeddi
 提供将表/列结构转为自然语言文本的默认实现，可加速构建文档：
 
 ```rust
-use aqua_rag::text_builder::build_table_document;
+use aqua_rag::text_builder::build_table_text;
 
-let doc = build_table_document(
-    "users".to_string(),
-    "users",
-    &[("id", "int"), ("name", "varchar")],
-    Some("用户表"),
-);
+let text = build_table_text("users", &[("id", "int"), ("name", "varchar")], Some("用户表"));
 ```
 
 ## 嵌入模型准备
@@ -130,6 +126,7 @@ optimum-cli export onnx --model BAAI/bge-small-zh-v1.5 bge_model_onnx/
 - 嵌入模型对文本有长度限制（bge-small-zh 支持最多 512 token），建议将文档片段控制在此范围内。
 - LanceDB 的异步 API 需要在 `tokio` 运行时中调用。
 - 本库不处理数据库连接，所有文档的生成由上层（如 `aqua-tui` 或独立构建工具）负责。
+- 使用前必须先调用 `open().await` 加载模型和连接 DB。
 
 ## 后续计划
 
