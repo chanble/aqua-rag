@@ -13,7 +13,7 @@ impl EmbeddingModel {
     /// 加载 ONNX 模型和分词器，从模型输出形状自动推断向量维度
     pub(crate) fn load(config: &RagConfig) -> Result<Self> {
         let session = ort::session::Session::builder()?
-            .with_model_from_file(&config.onnx_model_path)
+            .edit_from_file(&config.onnx_model_path)
             .map_err(|e| crate::error::RagError::Ort(e))?;
 
         let tokenizer = tokenizers::Tokenizer::from_file(&config.tokenizer_path)
@@ -21,7 +21,7 @@ impl EmbeddingModel {
 
         // 从模型输出张量形状中推断向量维度
         let dim = session
-            .outputs
+            .outputs()
             .first()
             .and_then(|o| o.dimensions().last().copied())
             .unwrap_or(config.embedding_dim as i64) as usize;

@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use lancedb::DistanceType;
+
 /// RAG 配置
 #[derive(Debug, Clone)]
 pub struct RagConfig {
@@ -15,6 +17,7 @@ pub struct RagConfig {
     pub batch_size: usize,
     /// 模型输出维度，默认 512
     pub embedding_dim: usize,
+    pub distance_type: DistanceType,
 }
 
 impl RagConfig {
@@ -32,6 +35,7 @@ impl RagConfig {
             tokenizer_path,
             batch_size: 32,
             embedding_dim: 512,
+            ..Default::default()
         }
     }
 
@@ -57,6 +61,7 @@ impl Default for RagConfig {
             tokenizer_path: PathBuf::from("./models/tokenizer.json"),
             batch_size: 32,
             embedding_dim: 512,
+            distance_type: DistanceType::Cosine,
         }
     }
 }
