@@ -1,4 +1,3 @@
-
 use thiserror::Error;
 
 /// aqua-rag 统一的错误类型

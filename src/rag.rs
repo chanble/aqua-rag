@@ -1,9 +1,9 @@
 use crate::{
     config::RagConfig,
     document::Document,
+    embedding::EmbeddingModel,
     error::{RagError, Result},
     search_result::{RagStats, SearchResult},
-    embedding::EmbeddingModel,
     storage::VectorStore,
 };
 
