@@ -5,5 +5,12 @@ edition = "2021"
 description = "Knowledge base management and vector retrieval for aquaDB"
 
 [dependencies]
-lancedb = { version = "0.27", features = ["rustls"] }  # rustls 用于更轻量的 TLS 支持
-ort = "2.0"
+lancedb = { version = "0.27" }
+ort = "2.0.0-rc.12"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tokenizers = "0.22"
+arrow = "58"
+arrow-array = "58"
+chrono = "0.4"

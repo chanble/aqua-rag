@@ -21,7 +21,7 @@ pub fn build_table_document(
     comment: Option<&str>,
 ) -> Document {
     let text = build_table_text(table_name, columns, comment);
-    let mut metadata = Metadata::new().with_table_name(table_name);
+    let mut metadata = crate::Metadata::new().with_table_name(table_name);
     let column_names = columns.iter().map(|(name, _)| name.to_string()).collect();
     metadata.column_names = column_names;
 
