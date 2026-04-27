@@ -21,6 +21,9 @@ pub enum RagError {
     #[error("Serialization error: {0}")]
     Serde(#[from] serde_json::Error),
 
+    #[error("Shape error: {0}")]
+    Shape(#[from] ndarray::ShapeError),
+
     #[error("Configuration error: {0}")]
     Config(String),
 

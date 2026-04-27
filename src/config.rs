@@ -34,7 +34,7 @@ impl RagConfig {
             onnx_model_path,
             tokenizer_path,
             batch_size: 32,
-            embedding_dim: 512,
+            embedding_dim: 0,
             ..Default::default()
         }
     }
@@ -60,7 +60,7 @@ impl Default for RagConfig {
             onnx_model_path: PathBuf::from("./models/bge-small-zh-v1.5.onnx"),
             tokenizer_path: PathBuf::from("./models/tokenizer.json"),
             batch_size: 32,
-            embedding_dim: 512,
+            embedding_dim: 0,
             distance_type: DistanceType::Cosine,
         }
     }
