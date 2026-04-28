@@ -32,6 +32,9 @@ pub enum RagError {
 
     #[error("Not initialized: {0}")]
     NotInitialized(String),
+
+    #[error("embedding session mutex poisoned")]
+    MutexPoisoned,
 }
 
 /// 库内部使用的结果类型
