@@ -67,7 +67,7 @@ impl EmbeddingModel {
 
         for (i, encoding) in encodings.iter().enumerate() {
             let tokens = encoding.get_ids();
-            let len = tokens.len();
+            let _len = tokens.len();
             for (j, &token_id) in tokens.iter().enumerate() {
                 input_ids[[i, j]] = token_id as i64;
                 attention_mask[[i, j]] = 1;
