@@ -52,6 +52,56 @@ impl RagConfig {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn test_config() -> RagConfig {
+        RagConfig::new(
+            PathBuf::from("./lancedb_test"),
+            "test_table".into(),
+            PathBuf::from("./models/test.onnx"),
+            PathBuf::from("./models/tokenizer.json"),
+        )
+    }
+
+    #[test]
+    fn test_config_defaults() {
+        let c = test_config();
+        assert_eq!(c.table_name, "test_table");
+        assert_eq!(c.batch_size, 32);
+        assert_eq!(c.embedding_dim, 0);
+        assert_eq!(c.distance_type, DistanceType::Cosine);
+    }
+
+    #[test]
+    fn test_config_with_batch_size() {
+        let c = test_config().with_batch_size(64);
+        assert_eq!(c.batch_size, 64);
+    }
+
+    #[test]
+    fn test_config_with_embedding_dim() {
+        let c = test_config().with_embedding_dim(768);
+        assert_eq!(c.embedding_dim, 768);
+    }
+
+    #[test]
+    fn test_config_default_impl() {
+        let c = RagConfig::default();
+        assert_eq!(c.table_name, "schema_knowledge");
+    }
+
+    #[test]
+    fn test_config_paths() {
+        let c = test_config();
+        assert_eq!(c.lancedb_path, PathBuf::from("./lancedb_test"));
+        assert_eq!(c.onnx_model_path, PathBuf::from("./models/test.onnx"));
+        assert_eq!(c.tokenizer_path, PathBuf::from("./models/tokenizer.json"));
+    }
+}
+
 impl Default for RagConfig {
     fn default() -> Self {
         Self {

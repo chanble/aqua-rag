@@ -26,3 +26,18 @@ pub struct RagStats {
     /// 存储路径
     pub storage_path: String,
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_search_result_construction() {
+        let r = super::SearchResult {
+            id: "1".into(),
+            text: "test text".into(),
+            metadata: super::Metadata::default(),
+            score: 0.95,
+        };
+        assert_eq!(r.id, "1");
+        assert_eq!(r.score, 0.95);
+    }
+}

@@ -39,3 +39,34 @@ pub enum RagError {
 
 /// 库内部使用的结果类型
 pub type Result<T> = std::result::Result<T, RagError>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io;
+
+    #[test]
+    fn test_error_display_io() {
+        let err = RagError::Io(io::Error::new(io::ErrorKind::NotFound, "file not found"));
+        let msg = err.to_string();
+        assert!(msg.contains("IO error"));
+    }
+
+    #[test]
+    fn test_error_display_config() {
+        let err = RagError::Config("missing field".into());
+        assert_eq!(err.to_string(), "Configuration error: missing field");
+    }
+
+    #[test]
+    fn test_error_display_not_initialized() {
+        let err = RagError::NotInitialized("call open() first".into());
+        assert_eq!(err.to_string(), "Not initialized: call open() first");
+    }
+
+    #[test]
+    fn test_error_from_serde() {
+        let err: RagError = serde_json::from_str::<()>("invalid").unwrap_err().into();
+        assert!(matches!(err, RagError::Serde(_)));
+    }
+}

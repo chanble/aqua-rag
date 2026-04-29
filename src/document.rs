@@ -52,3 +52,73 @@ impl Metadata {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_metadata_default() {
+        let m = Metadata::default();
+        assert!(m.table_name.is_none());
+        assert!(m.column_names.is_empty());
+    }
+
+    #[test]
+    fn test_metadata_new() {
+        let m = Metadata::new();
+        assert!(m.table_name.is_none());
+    }
+
+    #[test]
+    fn test_metadata_with_table_name() {
+        let m = Metadata::default().with_table_name("users");
+        assert_eq!(m.table_name.unwrap(), "users");
+    }
+
+    #[test]
+    fn test_metadata_with_columns() {
+        let m = Metadata::default().with_columns(vec!["id".into(), "name".into()]);
+        assert_eq!(m.column_names, vec!["id", "name"]);
+    }
+
+    #[test]
+    fn test_metadata_insert_extra() {
+        let mut m = Metadata::default();
+        m.insert("source", serde_json::Value::String("app".into()));
+        assert_eq!(m.extra["source"], "app");
+    }
+
+    #[test]
+    fn test_metadata_json_roundtrip() {
+        let m = Metadata::default()
+            .with_table_name("orders")
+            .with_columns(vec!["amount".into(), "date".into()]);
+        let json = serde_json::to_string(&m).unwrap();
+        let restored: Metadata = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.table_name.unwrap(), "orders");
+        assert_eq!(restored.column_names, vec!["amount", "date"]);
+    }
+
+    #[test]
+    fn test_metadata_json_extra_roundtrip() {
+        let mut m = Metadata::default();
+        m.insert("key", serde_json::Value::String("val".into()));
+        let json = serde_json::to_string(&m).unwrap();
+        let restored: Metadata = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.extra["key"], "val");
+    }
+
+    #[test]
+    fn test_document_roundtrip() {
+        let doc = Document {
+            id: "doc1".into(),
+            text: "users table".into(),
+            metadata: Metadata::default().with_table_name("users"),
+        };
+        let json = serde_json::to_string(&doc).unwrap();
+        let restored: Document = serde_json::from_str(&json).unwrap();
+        assert_eq!(restored.id, "doc1");
+        assert_eq!(restored.metadata.table_name.unwrap(), "users");
+    }
+}

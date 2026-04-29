@@ -236,3 +236,135 @@ impl VectorStore {
         Ok((count, self.path.clone(), last_updated))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::RagConfig;
+    use crate::document::Metadata;
+
+    fn temp_config() -> (RagConfig, std::path::PathBuf) {
+        let dir = std::env::temp_dir().join(format!(
+            "aqua_rag_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let config = RagConfig {
+            lancedb_path: dir.clone(),
+            table_name: "test_table".into(),
+            embedding_dim: 4,
+            ..Default::default()
+        };
+        (config, dir)
+    }
+
+    fn test_docs() -> Vec<Document> {
+        vec![
+            Document {
+                id: "doc1".into(),
+                text: "users table with id and name".into(),
+                metadata: Metadata::default(),
+            },
+            Document {
+                id: "doc2".into(),
+                text: "orders table with amount and date".into(),
+                metadata: Metadata::default(),
+            },
+        ]
+    }
+
+    fn test_vectors() -> Vec<Vec<f32>> {
+        vec![
+            vec![1.0, 0.0, 0.0, 0.0],
+            vec![0.0, 1.0, 0.0, 0.0],
+        ]
+    }
+
+    #[tokio::test]
+    async fn test_connect_and_stats() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+        let (count, path, _updated) = store.stats().await.unwrap();
+        assert_eq!(count, 0);
+        assert!(path.contains("aqua_rag_test"));
+        // 清理
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_insert_and_search() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+
+        store.insert(test_vectors(), test_docs()).await.unwrap();
+
+        let (count, _, _) = store.stats().await.unwrap();
+        assert_eq!(count, 2);
+
+        // 搜索与第一个向量相似的文档
+        let results = store.search(vec![1.0, 0.0, 0.0, 0.0], 5).await.unwrap();
+        assert!(!results.is_empty());
+        // 最相似的结果应该是 doc1 (cosine distance 0)
+        assert_eq!(results[0].id, "doc1");
+        // 余弦距离 [0, 2] 映射到分数 [0, 1]
+        assert!(results[0].score > 0.9);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_insert_empty() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+
+        // 空插入不应报错
+        store.insert(vec![], vec![]).await.unwrap();
+        let (count, _, _) = store.stats().await.unwrap();
+        assert_eq!(count, 0);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_delete() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+
+        store.insert(test_vectors(), test_docs()).await.unwrap();
+        assert_eq!(store.stats().await.unwrap().0, 2);
+
+        store.delete(&["doc1".into()]).await.unwrap();
+        let (count, _, _) = store.stats().await.unwrap();
+        assert_eq!(count, 1);
+
+        // 删除不存在的 ID 不应报错
+        store.delete(&["nonexistent".into()]).await.unwrap();
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_delete_empty() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+        // 空 ID 列表不应报错
+        store.delete(&[]).await.unwrap();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[tokio::test]
+    async fn test_clear() {
+        let (config, dir) = temp_config();
+        let store = VectorStore::connect(&config).await.unwrap();
+
+        store.insert(test_vectors(), test_docs()).await.unwrap();
+        assert_eq!(store.stats().await.unwrap().0, 2);
+
+        store.clear().await.unwrap();
+        assert_eq!(store.stats().await.unwrap().0, 0);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}
