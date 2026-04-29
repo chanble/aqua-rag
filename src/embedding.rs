@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 use ort::value::{TensorElementType, ValueType};
 
-use crate::{RagError, config::RagConfig, Result};
+use crate::{config::RagConfig, RagError, Result};
 
 pub(crate) struct EmbeddingModel {
     session: Mutex<ort::session::Session>,
@@ -36,9 +36,7 @@ impl EmbeddingModel {
         let texts = vec![text.to_string()];
         let mut batch_result = self.encode_batch(&texts)?;
         batch_result.pop().ok_or_else(|| {
-            RagError::NotInitialized(
-                "No embedding produced for the given text".to_string(),
-            )
+            RagError::NotInitialized("No embedding produced for the given text".to_string())
         })
     }
     /// 批量向量化（内部自动处理 padding 和 batch）
@@ -76,7 +74,7 @@ impl EmbeddingModel {
         }
         // 在构造 input_tensors 之前，先解析出需要的输入/输出名称（字符串拷贝，不持有 session 引用）
         let (input_ids_name, attention_mask_name, output_name) = {
-            let sess = self.session.lock().map_err(|_| RagError::MutexPoisoned)?;   // 获取不可变锁
+            let sess = self.session.lock().map_err(|_| RagError::MutexPoisoned)?; // 获取不可变锁
             let inputs_info = sess.inputs();
             let outputs_info = sess.outputs();
 
@@ -125,15 +123,13 @@ impl EmbeddingModel {
             attention_mask_name => ort::value::Tensor::from_array(attention_mask)?,
         ];
 
-        let mut session =  self
-            .session.lock().map_err(|_| RagError::MutexPoisoned)?;
+        let mut session = self.session.lock().map_err(|_| RagError::MutexPoisoned)?;
 
-        let outputs = session.run(input_tensors)
-            .map_err(|e| RagError::Ort(e))?;
+        let outputs = session.run(input_tensors).map_err(|e| RagError::Ort(e))?;
 
-        let output_tensor = outputs.get(output_name).ok_or_else(|| {
-            RagError::NotInitialized("Output tensor not found".to_string())
-        })?;
+        let output_tensor = outputs
+            .get(output_name)
+            .ok_or_else(|| RagError::NotInitialized("Output tensor not found".to_string()))?;
 
         // 5. 提取原始输出张量数据
         let (shape, data) = output_tensor

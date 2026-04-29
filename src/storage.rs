@@ -62,7 +62,11 @@ impl VectorStore {
             Err(e) => return Err(e.into()),
         };
 
-        Ok(Self { table, _db: db, path })
+        Ok(Self {
+            table,
+            _db: db,
+            path,
+        })
     }
 
     /// 初始化表（建表、建索引）
@@ -276,10 +280,7 @@ mod tests {
     }
 
     fn test_vectors() -> Vec<Vec<f32>> {
-        vec![
-            vec![1.0, 0.0, 0.0, 0.0],
-            vec![0.0, 1.0, 0.0, 0.0],
-        ]
+        vec![vec![1.0, 0.0, 0.0, 0.0], vec![0.0, 1.0, 0.0, 0.0]]
     }
 
     #[tokio::test]
